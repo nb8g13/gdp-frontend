@@ -1,0 +1,74 @@
+{
+  "job": {
+    "lang": "en-GB",
+    "user_id": 2954,
+    "name": "JKzcd46j1wFMyq5vdGiN8l0p.mp3",
+    "duration": 3333,
+    "created_at": "Mon Mar 27 09:52:33 2017",
+    "id": 2246722
+  },
+  "speakers": [
+    {
+      "duration": "20.590000",
+      "confidence": null,
+      "name": "M7",
+      "time": "61.780000"
+    }
+],
+"words": [
+{
+"duration": "0.050000",
+"confidence": "0.670",
+"name": "I",
+"time": "61.780000"
+},
+{
+"duration": "0.100000",
+"confidence": "0.640",
+"name": "was",
+"time": "61.870000"
+},
+{
+"duration": "0.310000",
+"confidence": "0.640",
+"name": "reminded",
+"time": "62.020000"
+},
+{
+"duration": "0.060000",
+"confidence": "0.640",
+"name": "of",
+"time": "62.350000"
+},
+{
+"duration": "0.700000",
+"confidence": "0.650",
+"name": "Moses",
+"time": "62.420000"
+},
+{
+"duration": "0.210000",
+"confidence": "0.870",
+"name": ".",
+"time": "63.130000"
+},
+{
+  "duration": "0.330000",
+  "confidence": "1.000",
+  "name": "This",
+  "time": "63.480000"
+},
+{
+  "duration": "0.270000",
+  "confidence": "1.000",
+  "name": "is",
+  "time": "63.870000"
+},
+{
+  "duration": "0.530000",
+  "confidence": "0.680",
+  "name": ".",
+  "time": "64.530000"
+}],
+"format": "1.0"
+}
