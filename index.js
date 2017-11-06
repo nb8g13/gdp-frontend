@@ -1111,19 +1111,25 @@ function doc_keyDown(event) {
     //F7 rewind 10 seconds
     if(event.keyCode === 118 && event.ctrlKey) {
         var time = getPlayerTime();
-        setPlayerTime(time-10);
+        var cor = time < 10? 0 : time - 10;
+        setPlayerTime(cor);
     }
 
     //F8 forward 10 seconds
     if(event.keyCode === 119 && event.ctrlKey) {
         var time = getPlayerTime();
-        setPlayerTime(time+10);
+        var duration = getDuration();
+        var cor = duration - time < 10? duration : time + 10;
+        setPlayerTime(cor);
     }
 
     //F9 key held down will play
     if(event.keyCode === 120 && !playKeyDown) {
         playKeyDown = true;
-        togglePlayPause();
+
+        if (!playing) {
+          togglePlayPause();
+        }
     }
 }
 
@@ -1142,14 +1148,22 @@ function getPlayerReference() {
     player.addHandler("currenttimechanged", moveCursorByPlayer);
     //player.onplaying = updatePlayingState;
     //TODO: Take playing state directly from API for mediastate player
-    player.addHandler("playerstatechanged", updatePlayingState);
+    player.addHandler("playstatechanged", updatePlayingState);
     //player.onpause = updatePlayingState;
 }
 
+// Needs to be set to true as event triggers when the player first loads
+// Could be more lightweight maybe?
 var playing = false;
 function updatePlayingState(eventData) {
-    alert("Hello jeff");
-    playing = !playing;
+    //playing = !playing;
+    state = eventData.playState;
+    if (state == "playing") {
+      playing = true;
+    }
+    else {
+      playing = false;
+    }
 }
 
 function togglePlayPause() {
@@ -1166,7 +1180,16 @@ function togglePlayPause() {
  * @returns {double} SS.sssssss
  */
 function getPlayerTime() {
-    return player.currentTime;
+    return player.getCurrentTime();
+}
+
+/**
+* Get the length of the current video
+*
+* @returns {double} SS.sssssss
+*/
+function getDuration() {
+  return player.getDuration();
 }
 
 /**
@@ -1175,7 +1198,8 @@ function getPlayerTime() {
  * @param time start-time in seconds
  */
 function setPlayerTime(time) {
-    player.currentTime = time;
+    //player.currentTime = time;
+    player.seekTo(time);
 }
 
 /**
