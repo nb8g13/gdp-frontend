@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mediasite Integration Player Demo</title>
+<script type="text/javascript" src="assets/jquery.js"></script>
+<script type="text/javascript" src="assets/toc.js"></script>
+<script type="text/javascript" src="MediasitePlayerIFrameAPI.js"></script>
+<script type="text/javascript" src="MediasitePlayerControls.js"></script>
+
+<script type="text/javascript">
+$(function() {
+    var setupCode = document.getElementById('demo-setup').outerHTML;
+
+    var $containers = $(".demo-container");
+    $containers.each(function(i, e) {
+        var code = setupCode + "\n" + e.innerHTML;
+
+        var $container = $('<div />', { 'class': 'demo-code-container' })
+            .appendTo(e);
+
+        $("<button />", { 'class': 'showcode' })
+            .appendTo($container)
+            .text('Show/Hide Code');
+
+        $("<pre>", { 'class': 'demo-code' })
+            .appendTo($container)
+            .text(code);
+    });
+
+    $containers.on('click', '.showcode', function(e) {
+        $(e.delegateTarget).find('.demo-code').toggle();
+    });
+
+    $containers.show();
+});
+
+</script>
+
+<script type="text/javascript" id="demo-setup">
+    var url = "http://sofo.mediasite.com/Mediasite/Play/d64d7806bcc14f95a3c57633bcfd30c31d";
+</script>
+
+<style type="text/css">
+.toc
+{
+    position: fixed;
+    top: 1em;
+    right: 1em;
+    /* float: right; */
+    background: white;
+    border: 1px black solid;
+    padding: 0 .5em;
+}
+
+#generated-toc .hidden { display: none; }
+#generated-toc #toggle-container { float: right; }
+
+.demo-container { display: none; }
+
+
+.demo-container:after {
+    margin-bottom: 20px;
+}
+
+.demo-container iframe, .demo-container .nascent-player {
+    width: 500px;
+    height: 375px;
+}
+
+.demo-container .controls {
+    margin-left: 20px;
+    width: 460px;
+    height: 70px;
+}
+
+.demo-code-container {
+    clear: left;
+}
+
+.demo-code {
+    display: none;
+    padding: 10px;
+    border: 1px grey dashed;
+}
+
+input[data-type="currentTime"] {
+    width: 3em;
+}
+
+</style>
+</head>
+<body id="theBody">
+<div id="generated-toc" class="toc"></div>
+
+<h1>Mediasite Integration Player Demo</h1>
+<p>Demonstrating how to control the  <a href="IntegrationPlayer.html">Integration Player</a> and affect its layout.</p>
+
+
+<h2>Default</h2>
+<div class="demo-container">
+     <div id="basicPlayer" class="nascent-player"></div>
+
+     <div id="basicPlayer-controls" class="controls"></div>
+
+     <script type="text/javascript">
+     $(function() {
+         var player = new Mediasite.Player( "basicPlayer",
+             {
+                url: url + (url.indexOf("?") == -1 ? "?" : "&") + "player=MediasiteIntegration"
+             });
+
+         var controls = new Mediasite.PlayerControls(player, "basicPlayer-controls");
+
+     });
+     </script>
+</div>
+
+
+
+
+<h2>Player with custom layout options</h2>
+<div class="demo-container" data-player="overridePlayer">
+     <div id="overridePlayer" class="nascent-player"></div>
+
+     <div id="overridePlayer-controls" class="controls">
+        Time: <span data-type="currentTime">---</span>   <br/>
+        <button data-action="playpause">Play/Pause</button> <br />
+        <button data-action="rewind">Rewind</button> <br />
+        <button data-action="toggleLayout">Switch layouts</button>
+     </div>
+
+     <script type="text/javascript">
+     $(function() {
+        var player = new Mediasite.Player( "overridePlayer",
+            {
+                url: url + (url.indexOf("?") == -1 ? "?" : "&") + "player=MediasiteIntegration",
+                layoutOptions:
+                  {
+                    ContentLayout: "SideBySide",
+                    SideBySideSecondarySize: "Small",
+                    PrimaryContent: "Slide",
+                    VideoPosition: "Left",
+                    VideoAspect: "4:3",
+                    SlideAspect: "16:9"
+                  }
+            }
+        );
+
+
+         var $controls = $("#overridePlayer-controls");
+
+         player.addHandler("currenttimechanged", function(data) {
+            $controls.find('[data-type=currentTime]').text(data.currentTime);
+         });
+
+         $controls.on('click', '[data-action=playpause]', function(e) {
+            if (player.getPlayState() != 'playing') {
+                player.play();
+            } else {
+                player.pause();
+            }
+         });
+
+         $controls.on('click', '[data-action=rewind]', function (e) {
+            player.seekTo(0);
+         });
+
+        $controls.on('click', '[data-action=toggleLayout]', toggleLayout);
+
+        var sideBySideLayout = true;
+        function toggleLayout() {
+            var newLayout = sideBySideLayout ? "PrimaryOnly" : "SideBySide";
+            sideBySideLayout = !sideBySideLayout;
+
+            player.setLayoutOptions(
+              {
+                ContentLayout: newLayout
+              }
+            );
+        }
+     });
+     </script>
+</div>
+
+</body>
+</html>

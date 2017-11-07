@@ -13,7 +13,7 @@ if (!Mediasite.PlayerControls) {
 				throw "PlayerControls must have a DOMElement to populate";
 			}
 
-			var controlsElement = controlsElementId.tagName 
+			var controlsElement = controlsElementId.tagName
 				? controlsElementId
 			 	: document.getElementById(controlsElementId);
 
@@ -83,14 +83,14 @@ if (!Mediasite.PlayerControls) {
 					return result;
 				}
 			}
-		}		
+		}
 
 		function addClass(element, className) {
 			if (!element || typeof className == "undefined") return;
 
 			var classes = (element.getAttribute('class') || "").split(' ');
 			for (var i = 0; i < classes.length; i++) {
-				if (classes[i] == className) 
+				if (classes[i] == className)
 					return;
 			}
 			classes.push(className);
@@ -144,6 +144,7 @@ if (!Mediasite.PlayerControls) {
 			Mediasite.PlayerControls.addEventHandler(context.seekSliderControl, 'click', onTouchSeekSlider);
 			function onTouchSeekSlider(e) {
 				var clickedAt = getSliderPercentageWhereClicked(e, context.seekSliderControl);
+				//alert(`clicked at: ${clickedAt}`);
 				var position = context.duration * clickedAt / 100;
 				context.player.seekTo(position);
 			}
@@ -171,12 +172,14 @@ if (!Mediasite.PlayerControls) {
 
 		function getSliderPercentageWhereClicked(e, control) {
 			var controlLeft = getOffsetRelativeToPage(control).left;
+			alert(`control left: ${controlLeft}`);
 			var offsetElement = e.pageX - controlLeft;
+			alert(`offset element: ${offsetElement}`);
 			if (offsetElement < 0) return; // ignore clicks from outside slider
 
 			var width = control.clientWidth ? control.clientWidth
 				: control.offsetWidth;
-
+			alert(`width: ${width}`);
 			var percentage = offsetElement / width * 100;
 
 			return percentage;
@@ -185,6 +188,8 @@ if (!Mediasite.PlayerControls) {
 		function getOffsetRelativeToPage(element) {
 			var offset = { left: 0, top: 0 };
 			do {
+				//element.style.backgroundColor = "#FF5733";
+				alert(`current left offset: ${element.id}`);
 				offset.left += element.offsetLeft;
 				offset.Top += element.offsetTop;
 				element = element.offsetParent;
@@ -269,11 +274,11 @@ if (!Mediasite.PlayerControls) {
 			element['on' + eventName.toLowerCase()] = handler;
 		}
 	};
-
+	//REMOVED VOLUME TEXT HERE (NOT SURE WHY IT WAS THERE IN THE FIRST PLACE TO BE HONEST)
 	Mediasite.PlayerControls.html = '\
 		<div class="MediasitePlayerControls" data-mediasite="container">	\
 			<div class="MediasitePlayerControls-Volume MediasitePlayerControls-Slider" data-mediasite="volumeslider">	\
-				<div class="MediasitePlayerControls-Volume-Icon" data-mediasite="volumemute">Volume</div>	\
+				<div class="MediasitePlayerControls-Volume-Icon" data-mediasite="volumemute"></div>	\
 				<div class="MediasitePlayerControls-VolumeBar MediasitePlayerControls-SliderTrack">	\
 					<div class="MediasitePlayerControls-SliderBar" data-mediasite="volumebar"></div> \
 				</div> \
@@ -297,7 +302,7 @@ if (!Mediasite.PlayerControls) {
 			if (css) return;
 
 			var contents  = Mediasite.PlayerControls.css + Mediasite.PlayerControls.spriteCss(options);
-			
+
 			css = document.createElement('style');
 			css.setAttribute('type', 'text/css');
 			css.innerHTML = contents;
@@ -351,7 +356,7 @@ if (!Mediasite.PlayerControls) {
         }
         timeComponents.push(minutes);
         timeComponents.push(seconds);
-        
+
         var displayTime = timeComponents.join(":");
         return displayTime;
     };

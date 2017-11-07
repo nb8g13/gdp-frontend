@@ -962,12 +962,12 @@ function sectionRemoveEventListener(event) {
 function createTranscriptObject(asrJson, model) {
     var transcript = model.createList();
 
-    var section = undefined;
-    var speakerIdx = 0;
-    var speaker = asrJson.speakers[speakerIdx].name;
-    var spkStartTime = parseFloat(asrJson.speakers[speakerIdx].time);
-    var speakerSwitchTime = spkStartTime + parseFloat(asrJson.speakers[speakerIdx].duration);
-
+    //var section = undefined;
+    //var speakerIdx = 0;
+    //var speaker = asrJson.speakers[speakerIdx].name;
+    //var spkStartTime = parseFloat(asrJson.speakers[speakerIdx].time);
+    //var speakerSwitchTime = spkStartTime + parseFloat(asrJson.speakers[speakerIdx].duration);
+    /*
     asrJson.words.forEach(function (word, idx){
 
         if (word.time >= speakerSwitchTime) {
@@ -1010,8 +1010,39 @@ function createTranscriptObject(asrJson, model) {
             section.words.push(model.create(Word, word.name, word.time, word.confidence));
         }
 
+    });*/
+
+    var section = model.create(Section, 0, 'MediaSite', model.createList());
+    transcript.push(section);
+    var captions = player.getCaptions();
+    captions = captions.slice(0,5);
+    //alert(`Number of captions: ${captions.length}`);
+
+    captions.forEach(function(item, idx, arr) {
+      var captionStart = item.time;
+      var captionEnd = item.endTime;
+      var captionDuration = captionStart - captionEnd;
+      var wordList = item.text.split(" ");
+      wordList.forEach(function(currentWord, i, words) {
+        var whitespace = /\S/.test(currentWord);
+        if (whitespace) {
+          if (currentWord.slice(-1) == '.') {
+            //alert(`printing new word: ${currentWord}`);
+            section.words.push(model.create(Word, currentWord, captionStart, 0.5));
+            section = model.create(Section, captionEnd, 'MediaSite', model.createList());
+            transcript.push(section);
+          }
+
+          else {
+            var newWord = currentWord + ' ';
+            alert(`printing new word: ${newWord}`);
+            section.words.push(model.create(Word, newWord, captionStart, 0.5));
+          }
+        }
+      });
     });
 
+    alert("returning transcript");
     return transcript;
 }
 
@@ -1136,13 +1167,17 @@ function doc_keyDown(event) {
 var player;
 // added global variable to store controller object (mediasite)
 var controls;
+
 function getPlayerReference() {
   player = new Mediasite.Player( "basicPlayer",
     {
       url: url + (url.indexOf("?") == -1 ? "?" : "&") + "player=MediasiteIntegration"
     });
 
-    controls = new Mediasite.PlayerControls(player, "basicPlayer-controls");
+  controls = new Mediasite.PlayerControls(player, "basicPlayer-controls",
+    {
+      imageSprite: "url(MediasitePlayerControls.png)"
+    });
 
     //player.ontimeupdate = moveCursorByPlayer;
     player.addHandler("currenttimechanged", moveCursorByPlayer);

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Mediasite Player iFrame API Demo</title>
+
+<script type="text/javascript" src="MediasitePlayerIFrameAPI.js"></script>
+<script type="text/javascript">
+
+    var presoUrl = "http://sofo.mediasite.com/Mediasite/Play/d64d7806bcc14f95a3c57633bcfd30c31d";
+
+function onReady() {
+    if (presoUrl) {
+        loadPlayer(presoUrl);
+    }
+}
+
+
+
+var player;
+function loadPlayer(presoUrl) {
+    var player = window.player = new Mediasite.Player('myPlayer', {
+        url: presoUrl,
+        events: {
+         'ready': onReady,
+         'error': function (eventData) { 
+            eventData.description = Mediasite.ErrorDescription[eventData.errorCode];
+            logEvent('error', eventData);
+         }
+        }
+    });
+
+    if (player.isReady()) {
+        onReady();
+    }
+
+    function onReady (eventData) { 
+        logEvent('ready', eventData);
+        refreshStateDisplay();
+        refreshDataDisplay();
+    }
+
+    // All events --> event log
+    var events = [
+         "error",
+        "durationchanged",
+        "playstatechanged",
+        "playbackratechanged",
+        "slideadded",
+        "slidechanged",
+        "captionchanged",
+        "chapterchanged",
+        "timedeventreached",
+        "livestatuschanged",
+        "volumechanged",
+        "currenttimechanged"
+    ];
+    for (var i in events) {
+        var event = events[i];
+        player.addHandler(event, curryLogEvent(event));
+    }
+    function curryLogEvent(eventName) {
+        var curriedLogEvent = function() {
+            var args = Array.prototype.slice.call(arguments, 0);
+            args.unshift(eventName);
+            logEvent.apply(this, args);
+        };
+         
+        return curriedLogEvent;
+    }
+ 
+    player.addHandler({
+        'durationchanged': function (e) {
+            displayStateValue('duration', e.duration);
+        },
+        'playerstatechanged': function(e) {
+            displayStateValue('playerState', player.getPlayerState());
+        },
+        'playstatechanged': function (e) {
+            displayStateValue('playState', e.playState);
+        },
+        'livestatuschanged': function (e) {
+            displayStateValue('liveStatus', e.liveStatus);
+        },
+        'currenttimechanged': function (e) {
+            displayStateValue('currentTime', e.currentTime);
+        },
+        'volumechanged': function (e) {
+            displayStateValue('volume', e.volume);
+            displayStateValue('isMuted', e.isMuted);
+        },
+        'slidechanged': function (e) {
+            displayStateValue('slide', e, true);
+        },
+        'captionchanged': function (e) {
+            displayCaptions(e.captions);
+        },
+        'chapterchanged': function (e) {
+            displayStateValue('chapter', e, true);
+        },
+        'timedeventreached': function (e) {
+            displayStateValue('timedEvent', e, true);
+        },
+        'playbackratechanged': function (e) {
+            displayStateValue('playbackRate', e.playbackRate);
+        },
+        'slideadded': function (e) {
+            refreshDataDisplay();
+        },
+        'visiblestreamschanged': function (e) {
+            refreshDataDisplay();
+            refreshStateDisplay();
+        }
+    });
+
+    // Disable form submission in favor of script event handlers
+    var forms = document.getElementsByTagName('form');
+    for (var f in forms) {
+        var form = forms[f];
+        if (form.id == 'presoSelectorForm') continue; 
+        
+        form.onsubmit = function() { return false; }
+    }
+
+
+    logCommand("Create player", presoUrl); 
+    logEvent('Player created');
+    displayStateValue('ready', player.isReady());
+};
+
+function doCommand(command /*, ...args */) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    player[command].apply(player, args);
+    
+    args.unshift(command);
+    logCommand.apply(this, args); 
+}
+
+function doCommandWithValue(command, elementId) {
+    var element = document.getElementById(elementId);
+    var value = element.value;
+    doCommand(command, value);
+
+    element.focus();
+}
+
+function commandPlay() { doCommand('play'); }
+function commandPause() { doCommand('pause'); }
+function commandStop() { doCommand('stop'); }
+
+
+function commandSetVolume() {
+    doCommandWithValue("setVolume", "command-volume");
+}
+function commandMute() { doCommand('mute'); }
+function commandUnMute() { doCommand('unMute'); }
+
+function commandSeekTo() {
+    doCommandWithValue("seekTo", "command-seekTo");
+}
+
+function refreshStateDisplay() {
+    displayStateValue('ready', player.isReady());
+    displayStateValue('volume', player.getVolume());
+    displayStateValue('duration', player.getDuration());
+    displayStateValue('currentTime', player.getCurrentTime());
+    displayStateValue('isMuted', player.isMuted());
+    displayStateValue('playbackRate', player.getPlaybackRate());
+    displayStateValue('playerState', player.getPlayerState());
+    displayStateValue('playState', player.getPlayState());
+    displayStateValue('liveStatus', player.getLiveStatus());
+    displayStateValue('slide', player.getCurrentSlide());
+    displayCaptions(player.getCurrentCaptions());
+    displayStateValue('chapter', player.getCurrentChapter());
+    displayStateValue('polls', player.getPollsUri());
+    displayStateValue('link', player.getLinks()[0]);
+    displayStateValue('stream', player.getAllStreams()[0]);
+    displayStateValue('visiblestreams', player.getVisibleStreamTypes());
+}
+
+function refreshDataDisplay() {
+    displayDataValue('slides', (player.getSlides().length || 0) + ' items');
+    displayDataValue('captions', (player.getCaptions().length || 0) + ' items');
+    displayDataValue('chapters', (player.getChapters().length || 0) + ' items');
+    displayDataValue('timedEvents', (player.getTimedEvents().length || 0) + ' items');
+    displayDataValue('links', (player.getLinks().length || 0) + ' items');
+    displayDataValue('streams', (player.getAllStreams().length || 0) + ' items');
+}
+
+function displayDataValue(elementId, data) {
+    elementId = 'data-' + elementId;
+    var element = document.getElementById(elementId);
+    if (!element) return;
+
+    var value = data;
+
+    element.value = value;
+}
+function displayStateValue(item, data, useItemPrefix) {
+    var elementId = 'state-' + item;
+    var element = document.getElementById(elementId);
+    if (!element) return;
+
+    var value = formatStateValue(item, data, useItemPrefix);
+
+    element.value = value;
+}
+
+function displayCaptions(captions) {
+    var i, formattedOne;
+    var formattedList = [];
+    var element = document.getElementById('state-caption');
+    if (!element || !captions) return;
+    
+    for (i = 0; i < captions.length; i++) {
+        formattedOne = formatStateValue('caption', captions[i], false);
+        formattedList.push(formattedOne);
+    }
+
+    element.value = formattedList.join('\n');
+}
+
+function formatStateValue(item, data, useItemPrefix) {
+    switch (item) {
+		case 'link':
+        case 'slide':
+        case 'chapter':
+        case 'timedEvent':
+        case 'caption':
+            if (!data) return '';
+
+            var value = [];
+            pushPropertyToValue('time', '@ ');
+            pushPropertyToValue('title');
+            pushPropertyToValue('text');
+            pushPropertyToValue('description');
+            pushPropertyToValue('url');
+            pushPropertyToValue('type');
+            pushPropertyToValue('payload');
+
+            value = value.join(' - ');
+            return value;
+            break;
+        case 'playerState':
+            return data.state + ' - ' + (data.isLive ? 'live' : 'on-demand');
+            break;
+        case 'visiblestreams':
+            return data.join(', ');
+            break;
+        case 'stream':
+            if (!data) return '';
+
+            var value = [];
+            pushPropertyToValue('streamType', 'Type ');
+            if (data.audioOnly) {
+                value.push('audio only');
+            } else {
+                pushPropertyToValue('aspectRatio', '@ ');
+            }
+
+            value = value.join(' - ');
+            return value;
+            break;
+        default:
+            if (typeof data == "object" && window.JSON && window.JSON.stringify) {
+                return JSON.stringify(data);
+            }
+            return data;
+    }
+
+    function pushPropertyToValue(key, prefix) {
+        if (useItemPrefix) {
+            key = item + key.charAt(0).toUpperCase() + key.slice(1);
+        }
+
+        var prop = data[key];
+
+        if (typeof prop != "undefined" && prop.toString().length) {
+            if (typeof prefix != "undefined") {
+                prop = prefix + prop;
+            }
+            value.push(prop);
+        }
+    }
+}
+
+var eventCountHandlerEnabled = false;
+var eventCount = 0;
+function toggleEventCountHandler(forceToggle) {
+    eventCountHandlerEnabled = (typeof forceToggle != "undefined" ? forceToggle : !eventCountHandlerEnabled);
+    if (eventCountHandlerEnabled) {
+        player.addHandler('currenttimechanged', eventCountHandler);
+    } else {
+        player.removeHandler('currenttimechanged', eventCountHandler);
+    }
+
+    updateEventCount();
+}
+
+function updateEventCount() {
+    eventCount = 0; // Reset event count
+    
+    var indicator = document.getElementById('state-eventFiredCountIndicator');
+    indicator.checked = eventCountHandlerEnabled;
+
+    var date = new Date();
+    var dateString = [date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds()].join(':');
+    var displayText = ["Toggled", (eventCountHandlerEnabled ? 'on' : 'off'), "at", dateString].join(" ");
+    indicator.title = displayText;
+
+    document.getElementById('state-eventFiredCount').title = "Number of times event has been handled since " + dateString;
+    displayStateValue('eventFiredCount', '');
+}
+
+function eventCountHandler() {
+    eventCount++;
+    displayStateValue('eventFiredCount', eventCount);
+}
+
+
+function logCommand(command, data, etc) {
+    var logItemsId = 'commands-items';
+    var labelText = command;
+
+    data = Array.prototype.slice.call(arguments, 1);
+
+    var logItems = document.getElementById(logItemsId);
+    var newItemElement = document.createElement('tr');
+
+    var when = new Date();
+    var whenText = [when.getHours(), when.getMinutes(), when.getSeconds(), when.getMilliseconds()].join(':');
+    var whenElement = document.createElement('td');
+    whenElement.innerHTML = whenText;
+    newItemElement.appendChild(whenElement);
+
+    var labelElement = document.createElement('td');
+    labelElement.innerHTML = labelText;
+    newItemElement.appendChild(labelElement);
+
+    var dataText = data.join(', ');
+    var dataElement = document.createElement('td');
+    dataElement.innerHTML = dataText;
+    newItemElement.appendChild(dataElement);
+
+    logItems.insertBefore(newItemElement, logItems.firstChild);
+}
+
+function logEvent(eventName, data) {
+    if (data && data.sender) {
+        delete data.sender;
+    }
+
+    var logItemsId = 'events-items';
+    var labelText = eventName;
+
+    var logItems = document.getElementById(logItemsId);
+    var newItemElement = document.createElement('tr');
+
+    var when = new Date();
+    var whenText = [when.getHours(), when.getMinutes(), when.getSeconds(), when.getMilliseconds()].join(':');
+    var whenElement = document.createElement('td');
+    whenElement.innerHTML = whenText;
+    newItemElement.appendChild(whenElement);
+
+    var labelElement = document.createElement('td');
+    labelElement.innerHTML = labelText;
+    newItemElement.appendChild(labelElement);
+
+    var dataText = JSON.stringify(data);
+    var dataElement = document.createElement('td');
+    dataElement.innerHTML = dataText;
+    newItemElement.appendChild(dataElement);
+
+    logItems.insertBefore(newItemElement, logItems.firstChild);
+}
+
+
+function getParameterByName(name) {
+  name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+  var regexS = "[\\?&]" + name + "=([^&#]*)";
+  var regex = new RegExp(regexS);
+  var results = regex.exec(window.location.search);
+  if(results == null)
+    return "";
+  else
+    return decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+
+
+</script>
+<style type="text/css">
+#presoSelector { padding: 1em;}
+#presoSelector label {display: block;}
+#presoSelector input[type=text] { width: 60em; }
+
+
+#myPlayer {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    width: 800px;
+    height: 600px;
+    overflow: hidden;
+}
+
+.left {
+    clear: left;
+    float: left;
+    max-width: 45%;
+}
+
+.right {
+    clear: right;
+    float: right;
+    width: 20em;
+}
+
+fieldset.right { width: 18em;}
+
+.state input[type="text"] {
+    float: right;
+}
+
+.state input[disabled] {
+    background-color: #ddd;
+    color: black;
+}
+
+.state label {
+    clear: both;
+    float: left;
+}
+
+
+table, tbody { 
+    border: 1px black solid;
+}
+
+
+th, td { 
+    border-left: 1px black solid;
+}
+th:first-child, td:first-child {
+    border-left: 0;
+}
+
+td {
+    border-top: 1px black solid;
+}
+
+#io-logs { clear: both; }
+
+#commands-log, #events-log { 
+    
+    padding-top: 1em;
+}
+
+</style>
+
+
+</head>
+<body onload="onReady();">
+<h1>Mediasite Player iFrame API</h1>
+
+
+<div id="playerContainer">
+
+<div class="left">
+    <div id="myPlayer">
+    
+    <div style="padding-top: 3em;" class="error">
+        If the player is not loading, check the following requirements:
+        
+        <noscript><em>JavaScript is required to use this page.</em></noscript>
+
+        <ul>
+            <li>The presentation URL points to a working presentation</li>
+            <li>The URLs for JavaScript files referenced in this file point to your Mediasite installation.</li>
+            <li>This file is loaded from an actual webserver (localhost is sufficient), not directly from disk as a file://. (Your browser's security restrictions may interfere with using the player locally.)</li>
+        </ul>
+    </div>
+    
+    </div>
+</div>
+<fieldset class="right">
+    <legend>API Methods</legend>
+    <form>
+        <input type="button" value="Play" onclick="commandPlay()">
+        <input type="button" value="Pause" onclick="commandPause()">
+        <input type="button" value="Stop" onclick="commandStop()">
+    </form>
+    <form>
+        <input type="text" id="command-seekTo" placeholder="Time"> 
+        <input type="submit" value="Seek to (seconds)" onclick="commandSeekTo();">
+    </form>
+    <form>
+        <input type="text" id="command-volume" placeholder="Volume"> 
+        <input type="submit" value="Set volume" onclick="commandSetVolume();">
+    </form>
+    <form>
+        <input type="button" value="Mute" onclick="commandMute();">
+        <input type="button" value="Unmute" onclick="commandUnMute();">
+    </form>
+</fieldset>
+<fieldset id="state" class="state right">
+    <legend>Presentation State</legend>
+    <div><input type="button" value="Refresh" onclick="refreshStateDisplay();" title="Uses player.getPROPERTY() functionality"></div>
+    <div>
+        <label for="state-playerState">Player State</label>
+        <input type="text" id="state-playerState" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-playState">Play State</label>
+        <input type="text" id="state-playState" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-liveStatus">Live Status</label>
+        <input type="text" id="state-liveStatus" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-currentTime">Current Time</label>
+        <input type="text" id="state-currentTime" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-duration">Duration</label>
+        <input type="text" id="state-duration" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-playbackRate">Playback Rate</label>
+        <input type="text" id="state-playbackRate" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-volume">Volume</label>
+        <input type="text" id="state-volume" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-isMuted">Muted?</label>
+        <input type="text" id="state-isMuted" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-slide">Slide</label>
+        <input type="text" id="state-slide" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-caption">Caption</label>
+        <input type="text" id="state-caption" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-chapter">Chapter</label>
+        <input type="text" id="state-chapter" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-timedEvent">TimedEvent</label>
+        <input type="text" id="state-timedEvent" placeholder="---" disabled> 
+    </div>
+	<div>
+        <label for="state-polls">Polls URI</label>
+        <input type="text" id="state-polls" placeholder="---" disabled> 
+    </div>
+
+    <div>
+        <label for="state-ready">Ready?</label>
+        <input type="text" id="state-ready" placeholder="---" disabled> 
+    </div>
+</fieldset>
+
+<fieldset id="data" class="state right">
+    <legend>Streams</legend>
+    <div><input type="button" value="Refresh" onclick="refreshDataDisplay(); refreshStateDisplay();" title="Uses player.getPROPERTY() functionality"></div>
+    <div>
+        <label for="data-streams">Streams</label>
+        <input type="text" id="data-streams" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-stream">Stream #1</label>
+        <input type="text" id="state-stream" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="state-visiblestreams">Visible Stream Types</label>
+        <input type="text" id="state-visiblestreams" placeholder="---" disabled> 
+    </div>
+</fieldset>
+<fieldset id="data" class="state right">
+    <legend>Array Data</legend>
+    <div><input type="button" value="Refresh" onclick="refreshDataDisplay();" title="Uses player.getPROPERTY() functionality"></div>
+    <div>
+        <label for="data-slides">Slides</label>
+        <input type="text" id="data-slides" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="data-captions">Captions</label>
+        <input type="text" id="data-captions" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="data-chapters">Chapters</label>
+        <input type="text" id="data-chapters" placeholder="---" disabled> 
+    </div>
+    <div>
+        <label for="data-chapters">Timed Events</label>
+        <input type="text" id="data-timedEvents" placeholder="---" disabled> 
+    </div>
+	<div>
+        <label for="data-links">Links</label>
+        <input type="text" id="data-links" placeholder="---" disabled> 
+    </div>
+	<div>
+        <label for="state-link">Link #1</label>
+        <input type="text" id="state-link" placeholder="---" disabled> 
+    </div>
+
+</fieldset>
+
+<fieldset id="multi-event" class="right">
+    <legend>Multiple handlers attached to one event</legend>    
+    <form>
+        <input type="button" value="Add one copy of handler" onclick="toggleEventCountHandler(true);" title="Add the handler" />
+        <input type="button" value="Remove all copies of handler" onclick="toggleEventCountHandler(false);" title="Remove the handler (all instances)" />
+        <input type="button" value="Toggle handler" onclick="toggleEventCountHandler();" title="Add or remove a handler for the currenttimechanged event" />
+    </form>
+
+    <p>
+        <input id="state-eventFiredCountIndicator" type="checkbox" disabled /> 
+        <label for="state-eventFiredCountIndicator"> Handlers are attached to event</label>
+    </p>
+    <p>
+        <label for="state-eventFiredCount" title="Test if event handler has been properly added or removed">Sum of number of handlers called per event</label>
+        <input type="text" id="state-eventFiredCount" placeholder="---" disabled>
+    </p>
+
+    <p>
+        This section demonstrates that multiple event handlers can be attached to a single event -- specifically, <code>currenttimechanged</code>. When the handler is called, it increments the count by one. The same handler can be attached several times by clicking the "Add" button repeatedly.
+    </p>
+</fieldset>
+
+
+<div id="io-logs">
+
+    <div id="commands-log">
+        <table>
+            <caption>Commands sent</caption>
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Command</th>
+                    <th>Arguments</th>
+                </tr>
+            </thead>
+            <tbody id="commands-items">
+            </tbody>
+        </table>
+    </div>
+
+    <div id="events-log">
+        <table>
+            <caption>Events received</caption>
+            <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Event</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody id="events-items">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</div>
+</body>
+</html>

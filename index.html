@@ -35,12 +35,24 @@
 
     <style type="text/css">
 
-      .video-container {
-        display: none;
+    * {
+        -webkit-box-sizing: content-box;
+        -moz-box-sizing: content-box;
+        box-sizing: content-box;
+      }
+      *:before,
+      *:after {
+        -webkit-box-sizing: content-box;
+        -moz-box-sizing: content-box;
         box-sizing: content-box;
       }
 
-      .video-container:after {
+      .video-container {
+        box-sizing: content-box;
+        margin-left: 50px;
+      }
+
+      .video-container::after {
         margin-bottom: 50px;
       }
 
@@ -51,20 +63,29 @@
 
       .video-container .controls {
         width: 460px;
-        margin-left: 20px;
         height: 70px;
+        margin-left: 20px;
+        box-sizing: content-box;
       }
 
       .video-container .controls *, .video-container .controls *::after,
-      .video-container .controls *::before {
+      .video-container .controls *::before, .video-container .controls *:after,
+      .video-container .controls *:before {
         box-sizing: content-box;
         line-height: normal;
+      }
+
+      .container {
+        padding-right: 0px;
+        padding-left: 0px;
+        margin-left: 0px;
+        margin-right: 0px;
       }
     </style>
 
 </head>
 
-<body class="container" onload="getPlayerReference();">
+<body id="theBody" class="container" onload="getPlayerReference();">
 
     <div class="row">
         <h1 class="col-lg-12">Synote Realtime Transcriber</h1>
@@ -79,15 +100,14 @@
     <!-- Our code is imported here -->
     <script src="index.js"></script>
 
-    <footer>
-        <div class="video-container" style="display: block;">
+    <footer id="theFooter">
+        <div class="video-container" id="main-box" style="display: block;">
           <!-- this div will be replaced by a mediasite player -->
           <div id="basicPlayer" class="nascent-player"></div>
 
           <!-- this div will be replaced by the mediasite controls -->
           <div id="basicPlayer-controls" class="controls"></div>
         </div>
-
     </footer>
 </body>
 </html>

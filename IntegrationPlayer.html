@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mediasite Integration Player</title>
+<link rel="stylesheet" type="text/css" href="assets/docs.css" />
+<script type="text/javascript" src="assets/toc.js"></script>
+</head>
+<body>
+
+
+<div id="generated-toc" class="toc"></div>
+
+<a id="integration-player"></a>
+<h1>Integration Player</h1>
+<div class="sectionDescription">
+
+<p>
+   The Integration Player is a chromeless, embeddable player for developers who want to maximize the content display area and 
+   create their own player controls using the <a href="PlayerSDK-Docs.html">IFrame Player API</a>.  <a href="IntegrationPlayerDemo.html">See the demo.</a>
+</p>
+    
+
+</div>
+
+<h2>Creation/Access</h2>
+<p>To use the Integration Player, <a href="PlayerSDK-Docs.html#api-create">create an IFrame Player</a> and override the presentation's player with the Integration Player by appending the <code>player=MediasiteIntegration</code> query parameter to the presentation URL.
+</p>
+
+<h3>Example</h3>
+
+<pre>
+     &lt;script src="path/to/assets/MediasitePlayerIFrameAPI.js"&gt;&lt;/script&gt;
+ 
+     &lt;div id="myPlayer"&gt;&lt;/div&gt;
+
+     &lt;script&gt;
+         var player = new Mediasite.Player( "myPlayer", 
+             {
+                 url: "http://mediasite.server.com/path/to/Mediasite/Play/presentationID?player=MediasiteIntegration"
+             }
+         );
+     &lt;/script&gt; 
+</pre>
+
+
+<a id="layout"></a>
+<h2>Controlling Layout</h2>
+<div class="sectionDescription">Developers can change a player's layout options when the player first loads and during the presentation.</div>
+
+<h3>Setting layout options when player loads</h3>
+<p class="sectionDescription">Layout options can be specified when the IFrame Player object is created and will be applied when the presentation is ready.</p>
+
+<pre>
+     &lt;script src="path/to/assets/MediasitePlayerIFrameAPI.js"&gt;&lt;/script&gt;
+ 
+     &lt;div id="myPlayer"&gt;&lt;/div&gt;
+
+     &lt;script&gt;
+         var player = new Mediasite.Player( "myPlayer", 
+             {
+                url: "http://mediasite.server.com/path/to/Mediasite/Play/presentationID?player=MediasiteIntegration",
+                layoutOptions: 
+                {
+                    ABooleanOption: true,
+                    AStringOption: "OptionValue"
+                } 
+             }
+         );
+     &lt;/script&gt; 
+</pre>
+
+
+
+<h3>Setting layout options during presentation playback</h3>
+<p class="sectionDescription">Developers can set layout options while a presentation is running using the <a href="PlayerSDK-Docs.html#api-setLayoutOptions" class="function">player.setLayoutOptions()</a> API method.</p>
+
+<pre>
+     &lt;script src="path/to/assets/MediasitePlayerIFrameAPI.js"&gt;&lt;/script&gt;
+ 
+     &lt;div id="myPlayer"&gt;&lt;/div&gt;
+
+     &lt;script&gt;
+         var player = new Mediasite.Player( "myPlayer", 
+             {
+                url: "http://mediasite.server.com/path/to/Mediasite/Play/presentationID?player=MediasiteIntegration",
+             }
+         );
+
+         // [after time passes]
+
+        player.setLayoutOptions(
+            {
+                ABooleanOption: true,
+                AStringOption: "OptionValue"
+            }
+        );
+
+     &lt;/script&gt; 
+</pre>
+
+
+<h3>Available layout options and values</h3>
+
+<dl>
+    <dt>ForceBalanced <span class="type">Boolean</span></dt>
+    <dd>
+        Force widths and heights to match up such that the entire content layout forms a balanced rectangle.
+    
+        <p>Default: <code>true</code></p>
+    </dd>
+ 
+     <dt>SideBias <span class="type">String</span></dt>
+     <dd>
+         The side to which higher priority streams should show affinity
+
+         <dl>
+            <dt>"Left"</dt>
+            <dt>"Right"</dt>
+        </dl>
+
+        <p>Default: <code>"Left"</code></p>
+
+    </dd>
+
+ 
+    <dt>ShowStateMessages <span class="type">Boolean</span></dt>
+    <dd>Whether the player should show Waiting and Ended messages when in those states.
+
+        <p>Default: <code>true</code></p>
+    </dd>
+
+    <dt>Margin <span class="type">Number</span></dt>
+    <dd>
+        Width, in pixels, of the unused space around the content stage. All sides get the same amount.
+        <p>Default: <code>0</code></p>
+    </dd>
+
+    <dt>Gutter <span class="type">Number</span></dt>
+    <dd>
+        Width, in pixels, of the space between stream boxes.
+        <p>Default: <code>2</code></p>
+    </dd>
+
+    <dt>FrameWidth <span class="type">Number</span></dt>
+    <dd>
+        Width, in pixels, of the frame around each stream box.
+        <p>Default: <code>3</code></p>
+    </dd>
+
+    <dt>FrameColor <span class="type">String</span></dt>
+        <dd>Color of the frame around each stream box (CSS color)
+        <p>Default: <code>"#ffffff"</code></p>
+    </dd>
+
+    <dt>FrameOpacity <span class="type">Number</span></dt>
+    <dd>
+        Opacity of the frame around each stream box. 
+        <p>Range: <code>0.0 - 1.0</code> (transparent to opaque)</p>
+        <p>Default: <code>0.4</code></p>
+    </dd>
+
+    <dt>BackgroundColor <span class="type">String</span></dt>
+    <dd>
+        Color of the player background (CSS color).
+        <p>Default: <code>"#000000"</code></p>
+    </dd>
+
+</dl> 
+
+<h3 id="legacy-options">Legacy layout options</h4>
+
+
+<div class="callout-box">
+    <div class="callout-box-caption">Deprecated Options</div>
+
+    <p>
+        The deprecated options exist to provide some compatibility to applications written to a 6.x version of the Player SDK. Deprecated options will cease to work in some future version of the SDK.
+    </p>
+     
+     <p>
+        The exclusive use of current options is highly recommended. The use of deprecated and current options together will likely lead to unexpected results. For example, some current options are disabled if any deprecated option is used.
+    </p>
+</div>
+
+<h4>Deprecated layout options</h4>
+
+<dl>
+
+    <dt>PrimaryContent <span class="type">String</span></dt>
+    <dd>Specifies which content item is primary, typically displayed larger.
+        <dl>
+            <dt>"Slide"</dt>
+            <dt>"Video"</dt>
+        </dl>
+
+        <p>Effectively makes the slide stream either first ("Slide") or last ("Video") in the stream order.</p>
+        <p>For presentations containing just a Slide stream and one video stream, this should operate the same as in 6.x. If you are not using legacy options, use <a href="PlayerSDK-Docs.html#api-setVisibleStreamTypes"><code>player.setVisibleStreamTypes()</code></a>.</p>
+    </dd>
+
+
+    <dt>VideoPosition <span class="type">String</span></dt>
+    <dd>Specifies the side of the player on which the video displays. 
+        <dl>
+            <dt>"Left"</dt>
+            <dt>"Right"</dt>
+        </dl>
+
+        <p>For presentations containing just a Slide stream and one video stream, this should operate the same as in 6.x.  If you are not using legacy options, use <a href="PlayerSDK-Docs.html#api-setVisibleStreamTypes"><code>player.setVisibleStreamTypes()</code></a>.</p>
+    </dd>
+
+    <dt>SideBySideSecondarySize <span class="type">String</span></dt>
+    <dd>Formerly used to configure the size of non-primary streams. 
+        <dl>
+            <dt>"EqualHeight"</dt>
+            <dd>Equivalent to setting <code>ForceBalanced</code> to <code>true</code>.</dd>
+            <dt>"Small" or "Medium" or "Large"</dt>
+            <dd>Equivalent to setting <code>ForceBalanced</code> to <code>false</code></dd>
+            <dt>"Medium"</dt>
+        </dl>
+    </dd>
+
+    <dt>ContentLayout <span class="type">String</span></dt>
+    <dd>Formerly used to specify the content layout style.  If you are not using legacy options, use <a href="PlayerSDK-Docs.html#api-setVisibleStreamTypes"><code>player.setVisibleStreamTypes()</code></a>.</p>
+        <dl>
+            <dt>"PrimaryOnly"</dt>
+            <dd>Display only the highest priority stream.</dd>
+            <dt>"SideBySide" or "PictureInPicture"</dt>
+            <dd>Display all streams next to each other, not overlapping.</dd>            
+        </dl>
+    </dd>
+</dl>
+
+
+<h4>Obsolete layout options</h4>
+
+<dl>
+    <dt>PipSecondarySize <span class="type">String</span></dt>
+    <dd>How small the secondary element is relative to the primary element. Applies when ContentLayout is "PictureInPicture".
+        <dl>
+            <dt>"Small"</dt>
+            <dt>"Standard"</dt>
+        </dl>
+    </dd>
+
+    <dt>VideoAspect <span class="type">String</span></dt>
+    <dd>Aspect ratio of container for video
+        <dl>
+            <dt>"4:3"</dt>
+            <dt>"16:9"</dt>
+        </dl>
+    </dd>
+
+    <dt>SlideAspect <span class="type">String</span></dt>
+    <dd>Aspect ratio of containers for slide images
+        <dl>
+            <dt>"4:3"</dt>
+            <dt>"16:9"</dt>
+        </dl>
+    </dd>
+</dl>
+
+
+<h3>Examples</h3>
+<h4>Show slides only</h4>
+<pre>
+     &lt;script src="path/to/assets/MediasitePlayerIFrameAPI.js"&gt;&lt;/script&gt; 
+     &lt;div id="myPlayer"&gt;&lt;/div&gt;
+
+     &lt;script&gt;
+         var player = new Mediasite.Player( "myPlayer", 
+             {
+                url: "http://mediasite.server.com/path/to/Mediasite/Play/presentationID?player=MediasiteIntegration",
+                events: {
+                    ready: function() {
+                        player.setVisibleStreamTypes([ Mediasite.StreamType.Slide ]);
+                    }
+                }
+            }
+         );
+     &lt;/script&gt; 
+</pre>
+
+
+<h4>Switch to video-only when starting chapter 3</h4>
+<pre>
+     &lt;script src="path/to/assets/MediasitePlayerIFrameAPI.js"&gt;&lt;/script&gt; 
+     &lt;div id="myPlayer"&gt;&lt;/div&gt;
+
+     &lt;script&gt;
+         var player = new Mediasite.Player( "myPlayer", 
+             {
+                url: "http://mediasite.server.com/path/to/Mediasite/Play/presentationID?player=MediasiteIntegration",
+                events: 
+                {
+                    ready: onReady,
+                    chapterchanged: onChapterChanged
+                }
+             }
+         ); 
+
+         var originalVisibleStreamTypes;
+         function onReady() {
+            originalVisibleStreamTypes = player.getVisibleStreamTypes();
+         }
+
+         function onChapterChanged(data) {
+            if (data.chapterNumber == 3) {
+                // Use video-only layout during chapter 3
+
+                player.setVisibleStreamTypes([ Mediasite.StreamType.Video1 ]);
+                );
+            } else {
+                // Reset layout
+
+                if (originalVisibleStreamTypes) {
+                    player.setVisibleStreamTypes(originalVisibleStreamTypes);
+                }
+            }
+        }
+     &lt;/script&gt; 
+</pre>
+
+
+<h4>Customize player theme</h4>
+<pre>
+     &lt;script src="path/to/assets/MediasitePlayerIFrameAPI.js"&gt;&lt;/script&gt; 
+     &lt;div id="myPlayer"&gt;&lt;/div&gt;
+
+     &lt;script&gt;
+        var player = new Mediasite.Player( "myPlayer", 
+            {
+                url: "http://mediasite.server.com/path/to/Mediasite/Play/presentationID?player=MediasiteIntegration",
+                layoutOptions: 
+                {
+                    FrameColor: '#00c',
+                    FrameOpacity: '0.2',
+                    BackgroundColor: '#ddf'
+                }
+            }
+        );
+     &lt;/script&gt; 
+</pre>
+
+
+<h1>Player Controls</h1><a id="controls"></a>
+
+<div class="sectionDescription">
+
+<p>Developers can add a basic control bar to a webpage containing an IFrame player using <a href="MediasitePlayerControls.js" target="_blank">Mediasite.PlayerControls</a>.  This can also be used as a base for more extensive controls.
+</p>
+
+<p>These controls are primarily intended for the Integration player. The controls can also be used for players with other player layouts whose primary controls are hidden.</p>
+
+</div>
+
+<h2>Creation/Access</h2>
+<p>To use the PlayerControls, create an IFrame player, then create the controls.  The webpage must reference the MediasitePlayerControls.js file, which must be hosted on the developer's webserver or otherwise packaged with your application. The sprite image file for the controls, MediasitePlayerControls.png, should be hosted under the same path (directory) as the webpage containing the IFrame player; or the developer should give the image's URL to the PlayerControls object when creating the controls.
+</p>
+
+<p>The 
+
+<h3>Example</h3><a id="controls-example"></a>
+
+<pre>
+     &lt;script src="path/to/assets/MediasitePlayerIFrameAPI.js"&gt;&lt;/script&gt; 
+     &lt;script src="path/to/assets/Mediasite.PlayerControls.js"&gt;&lt;/script&gt; 
+
+     &lt;div id="myPlayer"&gt; &lt;-- this element is replaced by IFrame Player --&gt; &lt;/div&gt;
+     &lt;div id="myPlayerControlsContainer"&gt; &lt;-- controls are added inside this element --&gt; &lt;/div&gt;
+
+     &lt;script&gt;
+        var player = new Mediasite.Player( "myPlayer", 
+            {
+                url: "http://mediasite.server.com/path/to/Mediasite/Play/presentationID?player=MediasiteIntegration",
+            }
+        );
+
+        
+        var controls = new Mediasite.PlayerControls(player, "myPlayerControlsContainer", 
+          {
+            imageSprite: "url(relative/path/to/assets/MediasitePlayerControls.png)"
+          }
+        );
+
+     &lt;/script&gt; 
+</pre>
+
+
+
+
+
+
+<div class="footer">
+    <p>&copy; 2013-2017 Sonic Foundry, Inc. All rights reserved. No part of this document may be copied and/or redistributed without the consent of Sonic Foundry, Inc. Additional copies may be obtained by contacting Sonic Foundry. Sonic Foundry, the Sonic Foundry logo, Mediasite, and the Mediasite logo are registered trademarks of Sonic Foundry, Inc. All other trademarks are the property of their respective owners.</p>
+
+ 
+
+    <p>
+        Sonic Foundry, Inc.<br>
+        222 W. Washington Avenue<br>
+        Madison WI 53703<br>
+        877-783-7987 toll free from the US and Canada<br>
+        608-443-1600<br>
+    </p>
+
+    <p>
+        <img src="assets/sofo-logo.jpg" alt="SonicFoundry (R)"><br>
+        Sonic Foundry. Since 1991.
+    </p>
+
+    <p>For more information, please contact <a href="mailto:mediasite@sonicfoundry.com">mediasite@sonicfoundry.com</a>
+
+    <p>Software: Mediasite Player</p>
+    <p>Version: 7.2, 2017</p>
+</div>
+</body>
+</html>
