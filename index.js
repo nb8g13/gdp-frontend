@@ -378,7 +378,7 @@ function createSectionHeaderElement(section) {
     var sectionHeaderElement = $('<div class="section-header"></div>');
 
     sectionHeaderElement.append(createSectionTimeStampElement(section));
-    sectionHeaderElement.append(createSectionSpeakerElement(section));
+    //sectionHeaderElement.append(createSectionSpeakerElement(section));
 
     return sectionHeaderElement;
 }
@@ -490,7 +490,7 @@ function splitSection(currentSectionIdx, currentWordList, currentWordIdx) {
  */
 function findPreviousAndNextWords(currentWordList, currentWordIdx, currentWord, insertIndex) {
     var previousChar, nextCharacter;
-
+    //if there is not currentword then the section is empty
     if (!currentWord) {
         previousChar = ' ';
         nextCharacter = ' ';
@@ -576,11 +576,19 @@ function prefixNextWord(currentWordList, currentWordIdx, currentWord, insertInde
  * @param event the keypress event
  */
 function addNewWord(currentSectionIdx, currentWordIdx, currentWord, event) {
-    var newWord = app.doc.getModel().create(Word, event.key, 100000, '99');
-
+    //??? - What was the initial intention here?????
+    //var newWord = app.doc.getModel().create(Word, event.key, 100000, '99');
+    //landmark
     if (!currentWord) {
+        console.log("no current word");
+        var newWord = app.doc.getModel().create(Word, event.key, 0, 99);
         app.transcript.get(currentSectionIdx).words.insert(currentWordIdx, newWord);
+
     } else {
+        console.log("there is a current word");
+        console.log(`current word time: ${currentWord.time}`);
+        console.log(`current word value: ${currentWord.value}`);
+        var newWord = app.doc.getModel().create(Word, event.key, currentWord.timestamp, 99);
         app.transcript.get(currentSectionIdx).words.insert(currentWordIdx + 1, newWord);
     }
 }
@@ -662,28 +670,45 @@ function createSectionEditorElement(section) {
             var surroundingChars = findPreviousAndNextWords(currentWordList, currentWordIdx, currentWord, insertIndex);
             var previousChar = surroundingChars.previousChar;
             var nextCharacter = surroundingChars.nextChar;
-
+            console.log(`Previous character: ${previousChar}`);
+            console.log(`Next character: ${nextCharacter}`)
             var isSpace = event.keyCode === 32;
             var prevIsSpace = previousChar === ' ';
             var nextIsSpace = nextCharacter === ' ';
 
+            // if the character added isn't a space and there isn't a space beforehand
+            // then we are in the middle/end of a word so we can just append
             if(!isSpace && !prevIsSpace) {
                 // Edit current middle
                 editCurrentWord(currentWord, insertIndex, event);
-
-            } else if(!isSpace && prevIsSpace && !nextIsSpace) {
+            }
+            // if there is a space beforehand, but not after we have to
+            // have to prefix the next word
+            else if(!isSpace && prevIsSpace && !nextIsSpace) {
                 // Edit next word (prefix)
                 prefixNextWord(currentWordList, currentWordIdx, currentWord, insertIndex, event);
 
-            } else if(!isSpace && prevIsSpace && nextIsSpace) {
+            }
+
+            //if there is a space on either side and the charcater added is not
+            // a space then we must add a new word!
+            else if(!isSpace && prevIsSpace && nextIsSpace) {
                 // New word
                 addNewWord(currentSectionIdx, currentWordIdx, currentWord, event);
+                //landmark
+            }
 
-            } else if(isSpace && !prevIsSpace && !nextIsSpace) {
+            // if the character is a space and the prev/afters aren't
+            // then we must split the current word
+            else if(isSpace && !prevIsSpace && !nextIsSpace) {
                 // Split word
                 splitWord(currentSectionIdx, currentWordIdx, currentWord, insertIndex, event);
+                //landmark
+            }
 
-            } else if(isSpace && !prevIsSpace && nextIsSpace && currentWordIdx === currentWordList.length - 1) {
+            // if the character is a space and the previous character is a letter and we are at the last word
+            // appeand a space to the word
+            else if(isSpace && !prevIsSpace && nextIsSpace && currentWordIdx === currentWordList.length - 1) {
 
                 //console.log("Append space to current word");
                 currentWord.value = currentWord.value + event.key;
@@ -720,7 +745,54 @@ function createSectionEditorElement(section) {
             }
         }
 
-        if(event.keyCode === 8) {
+        if (event.keyCode == 37 && event.shiftKey) {
+            event.preventDefault();
+            var currentSectionId = section.id;
+            var currentSectionIdx = getSectionIndexById(currentSectionId);
+
+            if(currentSectionIdx > 0) {
+              console.log("Moving back");
+              var upSection = app.transcript.get(currentSectionIdx - 1);
+              console.log(`going to time: ${upSection.startTime}`);
+              scrollToSection(upSection);
+              setPlayerTime(upSection.startTime);
+              $(`#${UpSection.id} .section-editor`).focus();
+
+            }
+
+            else {
+              setPlayerTime(section.startTime);
+            }
+        }
+
+        if (event.keyCode == 39 && event.shiftKey) {
+          event.preventDefault();
+          var currentSectionId = section.id;
+          var currentSectionIdx = getSectionIndexById(currentSectionId);
+
+          if(currentSectionIdx < app.transcript.length - 1) {
+              var downSection = app.transcript.get(currentSectionIdx + 1);
+              scrollToSection(downSection);
+              setPlayerTime(downSection.startTime);
+              $(`#${downSection.id} .section-editor`).focus();
+          }
+
+          else {
+            setPlayerTime(player.getDuration);
+          }
+        }
+
+        if (event.keyCode == 8 && event.shiftKey) {
+          event.preventDefault();
+          setPlayerTime(section.startTime);
+        }
+
+        if(event.keyCode == 32 && event.shiftKey) {
+          event.preventDefault();
+          togglePlayPause();
+        }
+
+        if(event.keyCode === 8 && !event.shiftKey) {
             event.preventDefault();
 
             // Get reference to section the edit happened in (objects - backend)
@@ -1015,34 +1087,42 @@ function createTranscriptObject(asrJson, model) {
     var section = model.create(Section, 0, 'MediaSite', model.createList());
     transcript.push(section);
     var captions = player.getCaptions();
-    captions = captions.slice(0,5);
-    //alert(`Number of captions: ${captions.length}`);
+    var captionStart = 0;
+    var captionEnd = 0;
+    var captionDuration = 0;
 
+    //If the last non-whitespace was a full stop.
+    //TODO: Make checks more efficient
+    seenDot = false;
     captions.forEach(function(item, idx, arr) {
-      var captionStart = item.time;
-      var captionEnd = item.endTime;
-      var captionDuration = captionStart - captionEnd;
+      captionStart = item.time === undefined? captionStart : item.time;
+      captionEnd = item.endTime === undefined? captionEnd : item.endTime;
+      captionDuration = captionEnd - captionStart;
+      console.log(`caption time: ${captionStart}`);
       var wordList = item.text.split(" ");
       wordList.forEach(function(currentWord, i, words) {
         var whitespace = /\S/.test(currentWord);
         if (whitespace) {
           if (currentWord.slice(-1) == '.') {
-            //alert(`printing new word: ${currentWord}`);
             section.words.push(model.create(Word, currentWord, captionStart, 0.5));
-            section = model.create(Section, captionEnd, 'MediaSite', model.createList());
-            transcript.push(section);
+            seenDot = true;
           }
 
           else {
+            if (seenDot) {
+              section = model.create(Section, captionStart, 'MediaSite', model.createList());
+              transcript.push(section);
+              seenDot = false;
+            }
             var newWord = currentWord + ' ';
-            alert(`printing new word: ${newWord}`);
+            //alert(`printing new word: ${newWord}`);
             section.words.push(model.create(Word, newWord, captionStart, 0.5));
           }
         }
       });
     });
 
-    alert("returning transcript");
+    //alert("returning transcript");
     return transcript;
 }
 
@@ -1323,6 +1403,12 @@ function trackAudioByCursor() {
     }
 };
 
+function scrollToSection(section) {
+  var sectionElement = document.getElementById(section.id);
+  var transcriptElement = document.getElementById("transcript");
+  transcriptElement.scrollTop = sectionElement.offsetTop;
+}
+
 function moveCursorByPlayer(eventData) {
     if(!playing) return;
     var time = eventData.currentTime;
@@ -1332,9 +1418,22 @@ function moveCursorByPlayer(eventData) {
         var lastWordIdx = section.words.length - 1;
         if(time < section.words.get(lastWordIdx).timestamp) {
             //word to seek to is within this section
-            var wordIdx = binarySearch(section.words, time, intLessThan);
+            var wordIdx = binarySearch(section.words, time, intLessThan, "timestamp");
+            targetTime = section.words.get(wordIdx).timestamp;
+            sameTime = true;
+            while(sameTime && wordIdx > 0) {
+              if (section.words.get(wordIdx-1).timestamp == targetTime) {
+                wordIdx = wordIdx - 1;
+              }
+
+              else {
+                sameTime = false;
+              }
+            }
             var id = section.words.get(wordIdx).id;
             var wordSpan = $('#' + id);
+            // Be smarter
+            scrollToSection(section);
             moveCursorToWord(wordSpan,0);
             //Found index, cancel loop
             break;
@@ -1350,11 +1449,11 @@ function moveCursorByPlayer(eventData) {
  * @param comparator
  * @returns Index of word to seek to in section
  */
-binarySearch = function(arr, find, comparator) {
+binarySearch = function(arr, find, comparator, property) {
     var low = 0, high = arr.length - 1, i, comparison, prev_comparison;
     while (low <= high) {
         i = Math.floor((low + high) / 2);
-        comparison = comparator(arr.get(i).timestamp, find);
+        comparison = comparator(arr.get(i)[property], find);
         prev_comparison = comparison;
         if (comparison < 0) { low = i + 1; continue; }
         if (comparison > 0) { high = i - 1; continue; }
@@ -1367,8 +1466,8 @@ binarySearch = function(arr, find, comparator) {
         var option_low = (i-1 > 0) ? i-1 : 0;
         var option_high = i;
     }
-    var dist_a = find - arr.get(option_low).timestamp;
-    var dist_b = arr.get(option_high).timestamp - find;
+    var dist_a = find - arr.get(option_low)[property];
+    var dist_b = arr.get(option_high)[property] - find;
     if (dist_a < dist_b) {
         return option_low;
     } else {

@@ -172,14 +172,14 @@ if (!Mediasite.PlayerControls) {
 
 		function getSliderPercentageWhereClicked(e, control) {
 			var controlLeft = getOffsetRelativeToPage(control).left;
-			alert(`control left: ${controlLeft}`);
+			//alert(`control left: ${controlLeft}`);
 			var offsetElement = e.pageX - controlLeft;
-			alert(`offset element: ${offsetElement}`);
+			//alert(`offset element: ${offsetElement}`);
 			if (offsetElement < 0) return; // ignore clicks from outside slider
 
 			var width = control.clientWidth ? control.clientWidth
 				: control.offsetWidth;
-			alert(`width: ${width}`);
+			//alert(`width: ${width}`);
 			var percentage = offsetElement / width * 100;
 
 			return percentage;
@@ -189,7 +189,7 @@ if (!Mediasite.PlayerControls) {
 			var offset = { left: 0, top: 0 };
 			do {
 				//element.style.backgroundColor = "#FF5733";
-				alert(`current left offset: ${element.id}`);
+				//alert(`current left offset: ${element.id}`);
 				offset.left += element.offsetLeft;
 				offset.Top += element.offsetTop;
 				element = element.offsetParent;
